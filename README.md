@@ -1,6 +1,11 @@
-Set-Content -Path README.md -Value "RAG-сервис на основе книг по психологии с FastAPI, LangChain, LangGraph и Qdrant."
-Структура проекта:
+# RAG-сервис на основе книг по психологии с FastAPI, LangChain, LangGraph и Qdrant
+  
+Задача: Обернуть твой RaG в сервис. Использовать следующие инструменты:
+fastapi, qdrant, chonkie, langchain, docker (docker compose) и структура проекта langgraph.
+  
+### Структура проекта:
 first_rag/
+├── notebooks/ # Тетрадки
 ├── src/ # Основной код
 │ ├── __init__.py
 │ ├── app.py # FastAPI приложение
@@ -19,3 +24,6 @@ first_rag/
 ├── docker-compose.yml # Compose: app + qdrant
 ├── .gitignore # Игнор (venv, pyc, etc.)
 └── README.md # Описание проекта
+
+
+
