@@ -1,0 +1,20 @@
+data:
+  pdf_path: "data/psichology_books/"
+  books: ["Allana-Piza-YAzyk-telodvizhenij", "Eric-Berne-games-that-people-play", "Goleman-D.-Emotional-Intelligence.-Why-it-may-be-more-important-than-IQ", "Gurina-Koshenova-Rabota-psikhologa-s_detskoi", "Psihology-Aykido", "Robert-Chaldyny_Psyhologyya-vliyaniya_Kak-nauchitsya-ubezhdat-y-dobivatsya-uspeha"]
+
+embeddings:
+  model_name: "sentence-transformers/paraphrase-multilingual-mpnet-base-v2"
+
+qdrant:
+  url: "http://localhost:6333"
+  collection_name: "psychology_books"
+  vector_size: 768
+
+llm:
+  model_id: "Qwen/Qwen3-8B"
+  quantization: "4bit"
+  device: "cuda"
+
+rag:
+  num_sentences_per_chunk: 10
+  n_resources_to_return: 5
