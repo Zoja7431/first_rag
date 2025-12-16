@@ -1,20 +1,97 @@
+# ========================================
+# Конфигурация RAG системы психолога
+# ========================================
+
+# Пути к данным
 data:
   pdf_path: "data/psichology_books/"
-  books: ["Allana-Piza-YAzyk-telodvizhenij", "Eric-Berne-games-that-people-play", "Goleman-D.-Emotional-Intelligence.-Why-it-may-be-more-important-than-IQ", "Gurina-Koshenova-Rabota-psikhologa-s_detskoi", "Psihology-Aykido", "Robert-Chaldyny_Psyhologyya-vliyaniya_Kak-nauchitsya-ubezhdat-y-dobivatsya-uspeha"]
+  books:
+    - "Allana-Piza-YAzyk-telodvizhenij"
+    - "Eric-Berne-games-that-people-play"
+    - "Goleman-D.-Emotional-Intelligence.-Why-it-may-be-more-important-than-IQ"
+    - "Gurina-Koshenova-Rabota-psikhologa-s_detskoi"
+    - "Psihology-Aykido"
+    - "Robert-Chaldyny_Psyhologyya-vliyaniya_Kak-nauchitsya-ubezhdat-y-dobivatsya-uspeha"
 
+# Обработка текста
+text_processing:
+  # Параметры Chonkie chunker
+  chunk_size: 512  # Размер чанка в токенах
+  overlap_size: 50  # Перекрытие между чанками
+  
+  # Параметры spaCy
+  spacy_model: "ru_core_news_sm"
+
+# Эмбеддинги
 embeddings:
-  model_name: "sentence-transformers/paraphrase-multilingual-mpnet-base-v2"
+  # HuggingFace модель для эмбеддингов
+  model_name: "sentence-transformers/all-MiniLM-L6-v2"
+  # Размер эмбеддинга (зависит от модели)
+  embedding_dim: 384
+  # Параметры для инициализации
+  device: "cuda" 
+  model_kwargs:
+    trust_remote_code: true
 
+# Qdrant векторная база
 qdrant:
-  url: "http://localhost:6333"
-  collection_name: "psychology_books"
-  vector_size: 768
+  # URL Qdrant
+  url: "https://a5a73dea-bb23-4c36-9113-56e407f4d1cb.europe-west3-0.gcp.cloud.qdrant.io:6333"
+  api_key: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhY2Nlc3MiOiJtIn0.0i2x2ZcuT9JNS6-ERm4xQeTCU52irdpwKFtGiMebsXA"
+  # Имя коллекции
+  collection_name: "psychology_rag"
+  # Размер вектора (должен совпадать с embedding_dim)
+  vector_size: 384
+  # Расстояние для поиска сходства
+  distance: "cosine"
+  # Параметры поиска
+  search_limit: 4  # Количество результатов поиска
 
+# LLM (Language Model)
 llm:
-  model_id: "Qwen/Qwen3-8B"
-  quantization: "4bit"
-  device: "cuda"
+  # Тип LLM: "ollama" или "huggingface"
+  type: "ollama"
+  
+  # Параметры для Ollama
+  ollama:
+    base_url: "http://localhost"
+    port: 11434
+    model: "qwen2.5:7b"  # или другая модель
+    temperature: 0.7
+    top_p: 0.9
+    top_k: 40
+  
+  # Параметры для HuggingFace Transformers
+  huggingface:
+    model_id: "Qwen/Qwen2.5-7B-Instruct"
+    device_map: "auto"
+    load_in_8bit: true
 
-rag:
-  num_sentences_per_chunk: 10
-  n_resources_to_return: 5
+# Промпт для RAG
+prompt:
+  system_role: "Вы опытный психолог с знаниями из лучших книг по психологии. Отвечайте на вопросы пользователя, используя предоставленный контекст. Будьте эмпатичны, конструктивны и профессиональны."
+  
+  retrieval_template: |
+    Контекст из книг:
+    {context}
+    
+    Вопрос: {question}
+    
+    Ответ:
+
+# LangGraph параметры
+graph:
+  checkpointer: "memory"  # "memory" или "postgres" для продакшена
+  max_iterations: 10
+  timeout: 30
+
+# Логирование
+logging:
+  level: "INFO"
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+
+# Docker параметры (для docker-compose)
+docker:
+  qdrant_port: 6333
+  qdrant_volume: "./qdrant_storage"
+  app_port: 8000

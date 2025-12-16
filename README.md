@@ -6,6 +6,8 @@ fastapi, qdrant, chonkie, langchain, docker (docker compose) и структур
 ### Структура проекта:
 first_rag/
 ├── notebooks/ # Тетрадки
+├── тесты
+│ └── разные тесты
 ├── src/ # Основной код
 │ ├── __init__.py
 │ ├── app.py # FastAPI приложение
@@ -16,7 +18,7 @@ first_rag/
 │ ├── vector_store.py # Интеграция с Qdrant
 │ └── llm.py # Интеграция с LLM (Qwen3-8B через LangChain)
 ├── data/ # Данные
-│ └── psichology books/ # Скопируйте ваши PDF сюда
+
 ├── config/ # Конфиг-файлы
 │ └── config.yaml # YAML-конфиг (пути, модели и т.д.)
 ├── requirements.txt # Зависимости
@@ -25,5 +27,12 @@ first_rag/
 ├── .gitignore # Игнор (venv, pyc, etc.)
 └── README.md # Описание проекта
 
-
-
+## Чтобы проверять тесты пиши 
+```
+pytest tests/ -v -s
+```
+или конкретный
+```
+pytest tests/test_data_loader.py -v -s
+```
+s - для вывода принта
