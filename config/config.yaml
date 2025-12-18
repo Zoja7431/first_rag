@@ -37,7 +37,7 @@ embeddings:
 qdrant:
   # URL Qdrant
   url: "https://a5a73dea-bb23-4c36-9113-56e407f4d1cb.europe-west3-0.gcp.cloud.qdrant.io:6333"
-  api_key: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhY2Nlc3MiOiJtIn0.0i2x2ZcuT9JNS6-ERm4xQeTCU52irdpwKFtGiMebsXA"
+  api_key: "запросить_отдельно"
   # Имя коллекции
   collection_name: "psychology_rag"
   # Размер вектора (должен совпадать с embedding_dim)
@@ -51,7 +51,7 @@ qdrant:
 llm:
   type: "groq"
   groq:
-    api_key: "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"
+    api_key: "выдается_отдельно"
     models:
       # - "llama-3.1-8b-instant"       # Быстрая
       - "llama-3.3-70b-versatile"    # Лучшая
