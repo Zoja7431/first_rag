@@ -70,16 +70,22 @@ class PromptConfig(BaseModel):
     retrieval_template: str
 
 
-# Если позже раскомментируешь llm / graph / logging / docker в YAML,
-# можно будет добавить сюда опциональные модели:
-#
-# class LLMConfig(BaseModel):
-#     type: str
-#     ollama: Optional[OllamaConfig] = None
-#     huggingface: Optional[HFConfig] = None
-#
-# и т.д.
+class HuggingFaceLLM(BaseModel):
+    model_id: str
+    api_key: str
+    temperature: float = 0.1
+    max_new_tokens: int = 1024
 
+class GroqLLM(BaseModel):
+    api_key: str
+    models: List[str]
+    temperature: float = Field(default=0.1, description="Температура генерации")
+    max_tokens: int = Field(default=1024, description="Макс токенов")
+
+class LLMConfig(BaseModel):
+    type: str = Field(..., description="Тип LLM: huggingface | groq")
+    huggingface: Optional[HuggingFaceLLM] = None
+    groq: Optional[GroqLLM] = None
 
 class Settings(BaseModel):
     data: DataConfig
@@ -87,6 +93,7 @@ class Settings(BaseModel):
     embeddings: EmbeddingsConfig
     qdrant: QdrantConfig
     prompt: PromptConfig
+    llm: LLMConfig = Field(..., description="LLM конфигурация")
 
     # На будущее (пока в YAML закомментировано):
     # llm: Optional[LLMConfig] = None

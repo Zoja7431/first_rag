@@ -1,7 +1,7 @@
 # RAG-сервис на основе книг по психологии с FastAPI, LangChain, LangGraph и Qdrant
   
 Задача: Обернуть твой RaG в сервис. Использовать следующие инструменты:
-fastapi, qdrant, chonkie, langchain, docker (docker compose) и структура проекта langgraph.
+fastapi, qdrant, chonkie, langchain, docker (docker compose)
   
 ### Структура проекта:
 first_rag/
@@ -29,10 +29,17 @@ first_rag/
 
 ## Чтобы проверять тесты пиши 
 ```
-pytest tests/ -v -s
+pytest src/tests/ -v -s
 ```
 или конкретный
 ```
-pytest tests/test_data_loader.py -v -s
+pytest src/tests/test_data_loader.py -v -s
 ```
 s - для вывода принта
+
+## Визулизация графа
+
+[question] ──→ retrieve ──→ [context] ──→ generate ──→ [response]
+                                       ↑
+                              llm + prompt
+
