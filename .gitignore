@@ -1,4 +1,39 @@
+# Virtual environment
 venv/
-.csv
-
 .env
+env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+.DS_Store
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Environment (не коммитим в Docker)
+.env.local
+.env.*.local
+
+# Git
+.git/
+.gitignore
+
+# Documentation
+*.md
+README.md
+SETUP_GUIDE.md
+QUICK_START.md
+ARCHITECTURE.md
+
+# Qdrant storage (может быть большим)
+# qdrant_storage/ (если нужна персистентность)
+
+# Logs
+*.log
+logs/
+
+*.csv
