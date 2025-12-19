@@ -35,9 +35,10 @@ embeddings:
 
 # Qdrant векторная база
 qdrant:
-  # URL Qdrant
-  url: "https://a5a73dea-bb23-4c36-9113-56e407f4d1cb.europe-west3-0.gcp.cloud.qdrant.io:6333"
-  api_key: "запросить_отдельно"
+  # URL Qdrant (берется из .env: QDRANT_URL)
+  url: "${QDRANT_URL}"
+  # API ключ для Qdrant Cloud (берется из .env: QDRANT_API_KEY)
+  api_key: "${QDRANT_API_KEY}"
   # Имя коллекции
   collection_name: "psychology_rag"
   # Размер вектора (должен совпадать с embedding_dim)
@@ -51,7 +52,8 @@ qdrant:
 llm:
   type: "groq"
   groq:
-    api_key: "выдается_отдельно"
+    # API ключ для Groq (берется из .env: GROQ_API_KEY)
+    api_key: "${GROQ_API_KEY}"
     models:
       # - "llama-3.1-8b-instant"       # Быстрая
       - "llama-3.3-70b-versatile"    # Лучшая

@@ -1,13 +1,18 @@
 """
-src/llm.py — GroqChat (llama3.1 + qwen + gpt-oss)
+src/llm.py — GroqChat (llama-3.3-70b-versatile)
 """
+
+import logging
 
 import os
 from typing import Optional
 from langchain_groq import ChatGroq
 from src.config import get_config
 
+logger = logging.getLogger(__name__)
+
 class LLMManager:
+    """Singleton паттерн"""
     _instance: Optional['LLMManager'] = None
     _llm = None
     _model_index = 0
@@ -27,11 +32,13 @@ class LLMManager:
         config = get_config()
         models = config.llm.groq.models
         
+        # Если индекс выходит за границы, используем первую модель
         if model_index >= len(models):
             model_index = 0
             
         model_id = models[model_index]
-        print(f"🚀 Groq LLM: {model_id}")
+
+        logger.info(f"🚀 Groq LLM: {model_id}")
         
         return ChatGroq(
             groq_api_key=config.llm.groq.api_key,

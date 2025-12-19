@@ -8,11 +8,17 @@ config.py — загрузка конфигурации из config.yaml без 
 from __future__ import annotations
 
 import os
+import logging
 from typing import Any, Dict, List, Optional
 
 import yaml
-from pydantic import BaseModel, Field
+from dotenv import load_dotenv
+from pydantic import BaseModel, Field, field_validator
 
+logger = logging.getLogger(__name__)
+
+# Ищет .env в корне проекта
+load_dotenv(dotenv_path=".env", override=True)
 
 # ---------- Pydantic-модели под структуру config.yaml ----------
 
@@ -53,6 +59,40 @@ class QdrantConfig(BaseModel):
     search_limit: int
     port: Optional[int] = None  # ← Для local, опционально
 
+    @field_validator("api_key")
+    @classmethod
+    def validate_api_key(cls, v: str) -> str:
+        """Убедиться что api_key содержит только ASCII символы"""
+        if not isinstance(v, str):
+            raise ValueError("api_key должен быть строкой")
+        if not v or v.startswith("$"):
+            raise ValueError(
+                f"api_key не загружен из .env или содержит подстановку: {v}"
+            )
+        try:
+            v.encode("ascii")
+        except UnicodeEncodeError:
+            raise ValueError(
+                f"api_key содержит недопустимые символы (кириллица?): {v}"
+            )
+        return v.strip()
+
+    @field_validator("url")
+    @classmethod
+    def validate_url(cls, v: str) -> str:
+        """Убедиться что url содержит только ASCII символы"""
+        if not isinstance(v, str):
+            raise ValueError("url должен быть строкой")
+        if not v or v.startswith("$"):
+            raise ValueError(
+                f"url не загружен из .env или содержит подстановку: {v}"
+            )
+        try:
+            v.encode("ascii")
+        except UnicodeEncodeError:
+            raise ValueError(f"url содержит недопустимые символы (кириллица?): {v}")
+        return v.strip()
+
     @property
     def full_url(self) -> str:
         """Cloud: полный url, local: url:port"""
@@ -77,11 +117,29 @@ class HuggingFaceLLM(BaseModel):
     max_new_tokens: int = 1024
 
 class GroqLLM(BaseModel):
-    api_key: str
+    api_key: str = Field(..., description="Groq API key из .env")
     models: List[str]
     temperature: float = Field(default=0.1, description="Температура генерации")
     max_tokens: int = Field(default=1024, description="Макс токенов")
 
+    @field_validator("api_key")
+    @classmethod
+    def validate_groq_api_key(cls, v: str) -> str:
+        """Убедиться что api_key из .env загружен корректно"""
+        if not isinstance(v, str):
+            raise ValueError("Groq api_key должен быть строкой")
+        if not v or v.startswith("$"):
+            raise ValueError(
+                f"Groq api_key не загружен из .env или содержит подстановку: {v}"
+            )
+        try:
+            v.encode("ascii")
+        except UnicodeEncodeError:
+            raise ValueError(
+                f"Groq api_key содержит недопустимые символы: {v}"
+            )
+        return v.strip()
+    
 class LLMConfig(BaseModel):
     type: str = Field(..., description="Тип LLM: huggingface | groq")
     huggingface: Optional[HuggingFaceLLM] = None
@@ -110,6 +168,8 @@ _config: Optional[Settings] = None
 def load_config(path: str = "config/config.yaml") -> Settings:
     """
     Загрузить конфиг из YAML и провалидировать через Pydantic.
+    
+    Поддерживает переменные окружения в формате ${VAR_NAME} или $VAR_NAME
     """
     if not os.path.exists(path):
         raise FileNotFoundError(f"Config file not found: {path}")
@@ -117,9 +177,42 @@ def load_config(path: str = "config/config.yaml") -> Settings:
     with open(path, "r", encoding="utf-8") as f:
         raw = yaml.safe_load(f) or {}
 
-    # Pydantic проверит, что структура соответствует Settings:
-    # data.pdf_path, embeddings.model_name, qdrant.url и т.д.
+    # Подставляем переменные окружения (поддержка ${VAR} и $VAR)
+    raw = _substitute_env_vars(raw)
+
+    logger.info(f"✅ Loaded config from {path}")
+
+    # Pydantic проверит структуру и валидность
     return Settings.model_validate(raw)
+
+
+def _substitute_env_vars(obj: Any) -> Any:
+    """
+    Рекурсивно подставляет переменные окружения в конфиг.
+    Поддержка: ${VAR_NAME}, $VAR_NAME
+    """
+    import re
+
+    if isinstance(obj, dict):
+        return {key: _substitute_env_vars(value) for key, value in obj.items()}
+
+    if isinstance(obj, list):
+        return [_substitute_env_vars(item) for item in obj]
+
+    if isinstance(obj, str):
+        # Паттерн ${VAR_NAME} или $VAR_NAME
+        def replace_var(match):
+            var_name = match.group(1) or match.group(2)
+            value = os.getenv(var_name)
+            if value is None:
+                logger.warning(f"⚠️  Environment variable {var_name} not found!")
+                return match.group(0)  # Возвращаем оригинальную строку если не найдена
+            return value
+
+        # Поддерживаем ${VAR} и $VAR
+        obj = re.sub(r"\$\{([^}]+)\}|\$([A-Za-z_][A-Za-z0-9_]*)", replace_var, obj)
+
+    return obj
 
 
 def get_config() -> Settings:
@@ -129,4 +222,13 @@ def get_config() -> Settings:
     global _config
     if _config is None:
         _config = load_config()
+    return _config
+
+
+def reload_config() -> Settings:
+    """
+    Перезагрузить конфиг (полезно для тестов).
+    """
+    global _config
+    _config = load_config()
     return _config
