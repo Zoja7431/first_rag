@@ -1,0 +1,199 @@
+.PHONY: help build up down logs restart clean test health
+
+# ====================================
+# RAG Psychology System - Makefile
+# ====================================
+
+help:
+	@echo "🐳 RAG Psychology System - Docker Commands"
+	@echo ""
+	@echo "Usage: make [command]"
+	@echo ""
+	@echo "Commands:"
+	@echo "  make build          - Собрать Docker образы"
+	@echo "  make up             - Запустить контейнеры"
+	@echo "  make down           - Остановить контейнеры"
+	@echo "  make restart        - Перезапустить контейнеры"
+	@echo "  make logs           - Показать логи"
+	@echo "  make logs-api       - Логи только FastAPI"
+	@echo "  make logs-qdrant    - Логи только Qdrant"
+	@echo "  make shell          - Войти в bash контейнера"
+	@echo "  make health         - Проверить здоровье сервиса"
+	@echo "  make stats          - Получить статистику"
+	@echo "  make index          - Индексировать PDF документы"
+	@echo "  make test           - Тестировать API"
+	@echo "  make clean          - Удалить контейнеры"
+	@echo "  make clean-all      - Полная очистка (образы, volumes)"
+	@echo ""
+
+# ====================================
+# ОСНОВНЫЕ КОМАНДЫ
+# ====================================
+
+build:
+	@echo "🔨 Собираю Docker образы..."
+	docker-compose build
+
+up:
+	@echo "🚀 Запускаю контейнеры..."
+	docker-compose up -d
+	@sleep 3
+	@echo "✅ Контейнеры запущены!"
+	@echo "📚 Документация: http://localhost:8000/docs"
+
+down:
+	@echo "🛑 Останавливаю контейнеры..."
+	docker-compose down
+
+restart:
+	@echo "🔄 Перезапускаю контейнеры..."
+	docker-compose restart
+	@sleep 2
+	@echo "✅ Контейнеры перезапущены!"
+
+# ====================================
+# ЛОГИРОВАНИЕ
+# ====================================
+
+logs:
+	@echo "📋 Логи всех контейнеров..."
+	docker-compose logs -f
+
+logs-api:
+	@echo "📋 Логи FastAPI приложения..."
+	docker-compose logs -f rag-psychology-api
+
+logs-qdrant:
+	@echo "📋 Логи Qdrant..."
+	docker-compose logs -f qdrant
+
+logs-tail:
+	@echo "📋 Последние 50 строк логов..."
+	docker-compose logs --tail=50 rag-psychology-api
+
+# ====================================
+# ИНТЕРАКТИВНАЯ РАБОТА
+# ====================================
+
+shell:
+	@echo "🔌 Входу в bash контейнера..."
+	docker exec -it rag-psychology-api /bin/bash
+
+shell-qdrant:
+	@echo "🔌 Входу в bash Qdrant контейнера..."
+	docker exec -it qdrant /bin/bash
+
+python-shell:
+	@echo "🐍 Запускаю Python shell в контейнере..."
+	docker exec -it rag-psychology-api python
+
+# ====================================
+# ПРОВЕРКА ЗДОРОВЬЯ И СТАТИСТИКА
+# ====================================
+
+health:
+	@echo "🏥 Проверка здоровья сервиса..."
+	@curl -s http://localhost:8000/api/health | python -m json.tool || echo "❌ Сервис не доступен"
+
+stats:
+	@echo "📊 Статистика Qdrant коллекции..."
+	@curl -s http://localhost:8000/api/stats | python -m json.tool || echo "❌ Сервис не доступен"
+
+ps:
+	@echo "📦 Статус контейнеров..."
+	docker-compose ps
+
+# ====================================
+# РАБОТА С ДАННЫМИ
+# ====================================
+
+index:
+	@echo "📚 Индексирование PDF документов..."
+	@echo "⏳ Это может занять 15-30 секунд..."
+	@curl -s -X POST http://localhost:8000/api/index | python -m json.tool || echo "❌ Ошибка при индексировании"
+
+ask-test:
+	@echo "❓ Тестовый вопрос к RAG..."
+	@curl -s -X POST http://localhost:8000/api/ask \
+		-H "Content-Type: application/json" \
+		-d '{"question":"Что такое язык телодвижений?","k":4}' | python -m json.tool
+
+# ====================================
+# ТЕСТИРОВАНИЕ
+# ====================================
+
+test:
+	@echo "🧪 Тестирование API..."
+	@echo ""
+	@echo "1️⃣  Health Check:"
+	@curl -s http://localhost:8000/api/health | python -m json.tool || echo "❌ Health check failed"
+	@echo ""
+	@echo "2️⃣  Stats:"
+	@curl -s http://localhost:8000/api/stats | python -m json.tool || echo "❌ Stats failed"
+
+test-ask:
+	@echo "🎯 Тестирование endpoint /api/ask..."
+	@curl -s -X POST http://localhost:8000/api/ask \
+		-H "Content-Type: application/json" \
+		-d '{"question":"психология","k":2}' | python -m json.tool
+
+# ====================================
+# ВНУТРИ КОНТЕЙНЕРА
+# ====================================
+
+chunk-analyse:
+	@echo "📊 Запускаю анализ chunks..."
+	docker exec rag-psychology-api python -m src.tests.chunk_analyse
+
+env-check:
+	@echo "🔍 Проверка переменных окружения..."
+	docker exec rag-psychology-api env | grep -E "QDRANT|GROQ"
+
+pdf-check:
+	@echo "📁 Проверка PDF файлов..."
+	docker exec rag-psychology-api ls -lah data/psichology_books/
+
+# ====================================
+# ОЧИСТКА
+# ====================================
+
+clean:
+	@echo "🗑️  Удаляю контейнеры..."
+	docker-compose down
+
+clean-volumes:
+	@echo "🗑️  Удаляю контейнеры и volumes..."
+	docker-compose down -v
+	@echo "✅ Volumes удалены!"
+
+clean-all:
+	@echo "🗑️  ПОЛНАЯ ОЧИСТКА (контейнеры, образы, volumes)..."
+	docker-compose down -v --rmi all
+	@echo "✅ Всё удалено!"
+
+clean-logs:
+	@echo "🗑️  Очищаю логи..."
+	docker system prune -f
+
+# ====================================
+# ПОЛНЫЙ ЦИКЛ
+# ====================================
+
+full-restart: clean build up health
+	@echo "✅ Полный перезапуск завершён!"
+
+setup: build up health
+	@echo "✅ Инициализация завершена!"
+
+# ====================================
+# ИНФОРМАЦИЯ
+# ====================================
+
+info:
+	@echo "📋 Информация о проекте:"
+	@echo "  API: http://localhost:8000"
+	@echo "  Docs: http://localhost:8000/docs"
+	@echo "  Qdrant: http://localhost:6333"
+	@echo ""
+	@echo "Контейнеры:"
+	@docker-compose ps --services

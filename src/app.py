@@ -17,7 +17,7 @@ import logging
 import time
 from contextlib import asynccontextmanager
 from typing import Optional
-from pathlib import Path  # ✅ ДОБАВЛЕНО
+from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
@@ -27,7 +27,7 @@ from pydantic import BaseModel, Field
 from src.config import get_config
 from src.rag_graph import ask as rag_ask
 from src.vector_store import get_vector_store_manager
-from src.data_loader import get_pdf_chunker  # ✅ ИСПРАВЛЕНО
+from src.data_loader import get_pdf_chunker
 
 # ═════════════════════════════════════════════════════════════════
 # БЛОК 2: ЛОГИРОВАНИЕ

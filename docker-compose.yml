@@ -1,60 +1,88 @@
-version: "3.9"
+version: '3.9'
 
 services:
-  # ============ RAG API ============
+  # ================================
+  # QDRANT - Векторная база данных
+  # ================================
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: rag-psychology-qdrant
+    ports:
+      - "6333:6333"
+      - "6334:6334"
+    environment:
+      QDRANT_API_KEY: ${QDRANT_API_KEY}
+    volumes:
+      # Сохранение данных между перезапусками
+      - qdrant_storage:/qdrant/storage
+      - qdrant_snapshots:/qdrant/snapshots
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:6333/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    networks:
+      - rag-network
+    restart: unless-stopped
+    command: ./qdrant --api-key ${QDRANT_API_KEY}
+
+  # ================================
+  # FASTAPI - Наше приложение
+  # ================================
   app:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: rag_api
+    container_name: rag-psychology-api
     ports:
       - "8000:8000"
     environment:
-      - GROQ_API_KEY=${GROQ_API_KEY}
-      - QDRANT_URL=http://qdrant:6333
-      - QDRANT_API_KEY=${QDRANT_API_KEY}
-      - PYTHONUNBUFFERED=1
-      - LOG_LEVEL=INFO
+      # Qdrant конфигурация
+      QDRANT_URL: http://qdrant:6333
+      QDRANT_API_KEY: ${QDRANT_API_KEY}
+      
+      # Groq LLM конфигурация
+      GROQ_API_KEY: ${GROQ_API_KEY}
+      
+      # Python конфигурация
+      PYTHONUNBUFFERED: 1
+      LOG_LEVEL: INFO
+    
+    volumes:
+      # Монтируем папку с PDF данными (если локально)
+      - ./data/psichology_books:/app/data/psichology_books:ro
+      # Сохраняем логи
+      - ./logs:/app/logs
+    
     depends_on:
       qdrant:
         condition: service_healthy
-    volumes:
-      - ./data:/app/data
-      - ./config:/app/config
-    networks:
-      - rag-network
-    restart: unless-stopped
+    
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/api/health"]
-      interval: 30s
+      interval: 15s
       timeout: 10s
       retries: 3
-      start_period: 10s
-
-  # ============ Qdrant Vector Database ============
-  qdrant:
-    image: qdrant/qdrant:latest
-    container_name: qdrant_db
-    ports:
-      - "6333:6333"
-    environment:
-      - QDRANT_API_KEY=${QDRANT_API_KEY}
-    volumes:
-      - qdrant_storage:/qdrant/storage
+      start_period: 30s
+    
     networks:
       - rag-network
+    
     restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:6333/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 5s
 
+# ================================
+# VOLUMES - Сохранение данных
+# ================================
 volumes:
   qdrant_storage:
     driver: local
+  qdrant_snapshots:
+    driver: local
 
+# ================================
+# NETWORKS - Сеть между контейнерами
+# ================================
 networks:
   rag-network:
     driver: bridge
