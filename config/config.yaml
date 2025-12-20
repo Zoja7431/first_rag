@@ -29,7 +29,7 @@ embeddings:
   # Размер эмбеддинга (зависит от модели)
   embedding_dim: 384
   # Параметры для инициализации
-  device: "cuda" 
+  device: "cpu"  #для запуска на устройстве cuda, для докера cpu
   model_kwargs:
     trust_remote_code: true
 

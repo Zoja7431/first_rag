@@ -17,7 +17,7 @@ services:
       - qdrant_storage:/qdrant/storage
       - qdrant_snapshots:/qdrant/snapshots
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:6333/health"]
+      test: ["CMD", "wget", "-qO-", "http://localhost:6333/healthz"]
       interval: 10s
       timeout: 5s
       retries: 3
@@ -25,7 +25,6 @@ services:
     networks:
       - rag-network
     restart: unless-stopped
-    command: ./qdrant --api-key ${QDRANT_API_KEY}
 
   # ================================
   # FASTAPI - Наше приложение
@@ -54,17 +53,6 @@ services:
       - ./data/psichology_books:/app/data/psichology_books:ro
       # Сохраняем логи
       - ./logs:/app/logs
-    
-    depends_on:
-      qdrant:
-        condition: service_healthy
-    
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/api/health"]
-      interval: 15s
-      timeout: 10s
-      retries: 3
-      start_period: 30s
     
     networks:
       - rag-network

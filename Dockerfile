@@ -7,16 +7,16 @@ FROM python:3.12-slim as builder
 WORKDIR /app
 
 # Копируем только requirements
-COPY requirements.txt .
+COPY requirements_docker.txt .
 
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir \
+    torch==2.5.1 torchvision==0.20.1 torchaudio==2.5.1 \
+    --index-url https://download.pytorch.org/whl/cu121 && \
+    pip install --no-cache-dir -r requirements_docker.txt
 
 # Копируем только нужный код
 COPY src ./src
 COPY config ./config
-COPY config.yaml ./config.yaml  # если нужен в корне
-COPY README.md ./README.md
-
 # Если нужны данные PDF – монтируем через volume, не копируем
 # COPY data/psichology_books ./data/psichology_books  # обычно не нужно
 
